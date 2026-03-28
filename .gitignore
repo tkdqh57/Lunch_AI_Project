@@ -1,0 +1,15 @@
+# 가상환경
+.venv/
+venv/
+ENV/
+
+# 파이썬 찌꺼기
+**/__pycache__/
+*.py[cod]
+
+# 환경 변수 (보안)
+.env
+
+# PyCharm 설정
+.idea/
+test_main.http
