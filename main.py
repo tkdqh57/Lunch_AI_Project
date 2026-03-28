@@ -71,12 +71,19 @@ async def get_ai_recommend(
         with_whom: CompanionType = CompanionType.alone
 ):
     # AI에게 전달할 카테고리 설정
-    category_text = f"'{category.value}' 종류중에서" if category != MenuCategory.random else "종류 상관없이 아무거나"
+    is_random = (category == MenuCategory.random)
+    category_constraint = f"'{category.value}' 종류중에서" if category != MenuCategory.random else "종류 상관없이 아무거나"
 
     prompt = (
-        f"너는 미식 전문가야. 현재 상황은 날씨 '{weather.value}', 기분 '{mood.value}', 동행자 '{with_whom.value}'이야. "
-        f"이 상황에 딱 맞는 점심 메뉴를 **{category_text}** 딱 1개만 추천해줘. "
-        f"메뉴 이름과 함께, 왜 이 메뉴가 현재 카테고리와 상황에 베스트인지 다정한 말투로 한 문장 설명해줘."
+        f"너는 사용자의 상황을 분석해 최적의 점심을 제안하는 최고의 AI야. \n\n"
+        f"[필수 제약 조건]\n"
+        f"1. 음식 종류: {category_constraint}\n"
+        f"2. 현재 상황: 날씨 '{weather.value}', 기분 '{mood.value}', 동행자 '{with_whom.value}'\n\n"
+        f" [미션]\n"
+        f" 위 제약 조건을 완벽히 준수해서 딱 1가지 메뉴만 추천해줘. 만약 카테고리가 '한식'이면 절대로 파스타나 초밥 같은 메뉴를 말해서는 안돼. \n\n"
+        f" [출력 형식]\n"
+        f" - 첫 줄: 메뉴 이름 (예: 김치찌개)\n"
+        f" - 두 번째 줄: 왜 이 메뉴가 현재 상황과 '{category.value}'라는 조건에 완벽히 부합하는지 전문적이고 다정한 말투로 설명해줘."
         )
 
     response = await model.generate_content_async(prompt)
