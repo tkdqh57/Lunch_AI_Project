@@ -49,15 +49,6 @@ class MoodType(str, Enum):
     diet = "다이어트 중"
     workout = "운동 완료! (단백질필요)"
 
-class MenuCategory(str, Enum):
-    korean = "한식"
-    japanese = "일식"
-    chinese = "중식"
-    western = "양식"
-    snack = "분식"      # 분식 추가!
-    convenience = "편의점"
-    random = "아무거나"
-
 @app.get("/")
 def read_root():
     return FileResponse('static/index.html')
@@ -65,30 +56,27 @@ def read_root():
 # Gemini AI 추천 API(Pro버전 활용)
 @app.get("/ai-recommend")
 async def get_ai_recommend(
-        category: MenuCategory = MenuCategory.random,
         weather: WeatherType = WeatherType.sunny,
         mood: MoodType = MoodType.happy,
         with_whom: CompanionType = CompanionType.alone
 ):
-    # AI에게 전달할 카테고리 설정
-    is_random = (category == MenuCategory.random)
-    category_constraint = f"'{category.value}' 종류중에서" if category != MenuCategory.random else "종류 상관없이 아무거나"
 
     prompt = (
-        f"너는 사용자의 상황을 분석해 최적의 점심을 제안하는 최고의 AI야. \n\n"
-        f"[필수 제약 조건]\n"
-        f"1. 음식 종류: {category_constraint}\n"
-        f"2. 현재 상황: 날씨 '{weather.value}', 기분 '{mood.value}', 동행자 '{with_whom.value}'\n\n"
+        f"너는 전 세계 모든 요리를 섭렵한 최고의 푸드 큐레이터야.\n\n"
+        f" [분석 데이터]\n"
+        f" - 날씨: {weather.value}\n"
+        f" - 사용자의 기분: {mood.value}\n"
+        f" - 함께 먹는 사람: {with_whom.value}\n\n"
         f" [미션]\n"
-        f" 위 제약 조건을 완벽히 준수해서 딱 1가지 메뉴만 추천해줘. 만약 카테고리가 '한식'이면 절대로 파스타나 초밥 같은 메뉴를 말해서는 안돼. \n\n"
+        f" 위 3가지 요소를 심도 있게 분석해서, 지금 이 순간 사용자가 가장 행복하게 먹을 수 있는 점심 메뉴 딱 1가지만 추천해줘.\n"
+        f" 한식, 중식, 일식, 양식, 에스닉 푸드 등 어떤 장르든 상관없어. 오직 '최고의 조합'에만 집중해.\n\n"
         f" [출력 형식]\n"
-        f" - 첫 줄: 메뉴 이름 (예: 김치찌개)\n"
-        f" - 두 번째 줄: 왜 이 메뉴가 현재 상황과 '{category.value}'라는 조건에 완벽히 부합하는지 전문적이고 다정한 말투로 설명해줘."
+        f" 1. 첫 줄: 메뉴 이름 (예: 매콤한 해물 짬뽕)\n"
+        f" 2. 두 번째 줄: 왜 이 메뉴가 현재 날씨와 기분, 그리고 동행자와의 상황에 완벽한 '인생 메뉴'인지 다정하고 설득력 있게 한 문장 설명해줘."
         )
 
     response = await model.generate_content_async(prompt)
     return {
-        "category": category.value,
         "weather": weather.value,
         "mood": mood.value,
         "with_whom": with_whom.value,
