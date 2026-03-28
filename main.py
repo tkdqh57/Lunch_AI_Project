@@ -60,20 +60,7 @@ class MenuCategory(str, Enum):
 
 @app.get("/")
 def read_root():
-    return{"message": "오늘 뭐 먹지? 에 오신것을 환영합니다."}
-
-
-# 단순 랜덤 추천 API
-@app.get("/recommend/{category}")
-def get_random_menu(category: str):
-    if category in menu_db:
-        selection = random.choice(menu_db[category])
-        return {"category": category, "menu": selection, "type": "random"}
-
-    available_categories = list(menu_db.keys())
-    return {
-        "error": f"카테고리를 찾을 수 없습니다. 선택가능: {', '.join(available_categories)}"
-    }
+    return FileResponse('static/index.html')
 
 # Gemini AI 추천 API(Pro버전 활용)
 @app.get("/ai-recommend")
@@ -95,6 +82,9 @@ async def get_ai_recommend(
     response = await model.generate_content_async(prompt)
     return {
         "category": category.value,
+        "weather": weather.value,
+        "mood": mood.value,
+        "with_whom": with_whom.value,
         "recommendation": response.text
     }
 
@@ -108,10 +98,6 @@ def create_feedback(feedback: FeedbackCreate):
 @app.get("/feedbacks")
 def get_feedback():
     return get_all_feedbacks()
-
-@app.get("/")
-def read_root():
-    return FileResponse('static/index.html')
 
 # static 폴더를 "/" 경로로 연결 (index.html을 기본 화면으로 설정)
 app.mount("/static", StaticFiles(directory="static"), name="static")
