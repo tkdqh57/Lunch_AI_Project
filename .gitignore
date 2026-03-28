@@ -9,6 +9,7 @@ ENV/
 
 # 환경 변수 (보안)
 .env
+feedback.db
 
 # PyCharm 설정
 .idea/

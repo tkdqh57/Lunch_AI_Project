@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>오늘 뭐 먹지? AI 친구</title>
+    <style>
+        /* 디자인 (CSS) */
+        body { font-family: 'Pretendard', sans-serif; background-color: #f8f9fa; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 450px; margin-bottom: 20px; box-sizing: border-box; }
+        h2, h3 { text-align: center; color: #333; margin-top: 0; }
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 14px; color: #555; }
+        select, input { width: 100%; padding: 12px; margin-top: 8px; border-radius: 12px; border: 1px solid #e0e0e0; box-sizing: border-box; font-size: 15px; }
+        button { width: 100%; padding: 15px; background: #ff6b6b; color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 20px; transition: 0.3s; }
+        button:hover { background: #ee5253; }
+        #result { margin-top: 20px; padding: 20px; border-radius: 15px; background: #fff5f5; border-left: 6px solid #ff6b6b; display: none; line-height: 1.6; color: #444; }
+
+        /* 댓글창 전용 */
+        .feedback-item { border-bottom: 1px solid #f1f1f1; padding: 12px 0; }
+        .feedback-date { font-size: 11px; color: #bbb; margin-top: 4px; }
+        .feedback-list { margin-top: 15px; max-height: 250px; overflow-y: auto; }
+        .send-btn { background: #4a4e69; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>🍴 점심 메뉴 추천받기</h2>
+        <label>☀️ 현재 날씨</label>
+        <select id="weather">
+            <option value="맑음">맑음</option>
+            <option value="비">비가 옴</option>
+            <option value="눈">눈이 옴</option>
+            <option value="흐림">흐림</option>
+        </select>
+
+        <label>😊 내 기분은?</label>
+        <select id="mood">
+            <option value="행복함">행복함</option>
+            <option value="우울함">우울함</option>
+            <option value="피곤함">피곤함</option>
+            <option value="배고픔">배고픔</option>
+            <option value="다이어트 중">다이어트 중</option>
+            <option value="운동 완료! (단백질 필요)">운동 완료! 💪</option>
+        </select>
+
+        <label>👫 누구랑 같이 먹어?</label>
+        <select id="with_whom">
+            <option value="혼자">혼자</option>
+            <option value="연인">연인(데이트)</option>
+            <option value="친구">친한 친구</option>
+            <option value="직장동료">직장 동료</option>
+        </select>
+
+        <button onclick="getRecommendation()">AI 친구에게 물어보기</button>
+        <div id="result"></div>
+    </div>
+
+    <div class="card">
+        <h3>💬 한마디 남겨주세요</h3>
+        <input type="text" id="feedbackInput" placeholder="기능 추천이나 후기를 남겨주세요!">
+        <button class="send-btn" onclick="sendFeedback()">후기 등록</button>
+
+        <div class="feedback-list" id="feedbackList">
+            </div>
+    </div>
+
+    <script>
+        // 페이지 로드 시 댓글 목록 불러오기
+        document.addEventListener('DOMContentLoaded', loadFeedbacks);
+
+        // 1. 메뉴 추천 요청 함수
+        async function getRecommendation() {
+            const w = document.getElementById('weather').value;
+            const m = document.getElementById('mood').value;
+            const c = document.getElementById('with_whom').value;
+            const resDiv = document.getElementById('result');
+
+            resDiv.style.display = 'block';
+            resDiv.innerHTML = "<strong>음... 맛있는 걸 생각 중이야... 💭</strong>";
+
+            const response = await fetch(`/ai-recommend?weather=${w}&mood=${m}&with_whom=${c}`);
+            const data = await response.json();
+
+            resDiv.innerHTML = `<strong>✨ AI 친구의 제안:</strong><br>${data.recommendation}`;
+        }
+
+        // 2. 댓글 전송 함수
+        async function sendFeedback() {
+            const input = document.getElementById('feedbackInput');
+            const content = input.value;
+            if (!content) return alert("내용을 입력해주세요!");
+
+            await fetch('/feedback', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ content: content })
+            });
+
+            input.value = '';
+            loadFeedbacks(); // 새로고침
+        }
+
+        // 3. 댓글 목록 로드 함수
+        async function loadFeedbacks() {
+            const response = await fetch('/feedbacks');
+            const data = await response.json();
+            const listDiv = document.getElementById('feedbackList');
+
+            listDiv.innerHTML = data.map(f => `
+                <div class="feedback-item">
+                    <div>${f.content}</div>
+                    <div class="feedback-date">${f.date}</div>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
