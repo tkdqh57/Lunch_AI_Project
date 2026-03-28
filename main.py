@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 import random
 import google.generativeai as genai
+from fastapi.responses import FileResponse
 from starlette.staticfiles import StaticFiles
 
 from data import menu_db
@@ -48,6 +49,15 @@ class MoodType(str, Enum):
     diet = "다이어트 중"
     workout = "운동 완료! (단백질필요)"
 
+class MenuCategory(str, Enum):
+    korean = "한식"
+    japanese = "일식"
+    chinese = "중식"
+    western = "양식"
+    snack = "분식"      # 분식 추가!
+    convenience = "편의점"
+    random = "아무거나"
+
 @app.get("/")
 def read_root():
     return{"message": "오늘 뭐 먹지? 에 오신것을 환영합니다."}
@@ -68,26 +78,24 @@ def get_random_menu(category: str):
 # Gemini AI 추천 API(Pro버전 활용)
 @app.get("/ai-recommend")
 async def get_ai_recommend(
+        category: MenuCategory = MenuCategory.random,
         weather: WeatherType = WeatherType.sunny,
         mood: MoodType = MoodType.happy,
         with_whom: CompanionType = CompanionType.alone
 ):
+    # AI에게 전달할 카테고리 설정
+    category_text = f"'{category.value}' 종류중에서" if category != MenuCategory.random else "종류 상관없이 아무거나"
 
     prompt = (
-        f"너는 지금 나({with_whom.value}와 함께 있는 상태)의 점심 메뉴를 골라주는 다정한 친구나 연인이야."
-        f"오늘 날씨는 {weather.value}이고 내 기분은 {mood.value}이야."
-        f"특히 지금 내가 **{with_whom.value}**와(과) 함께 밥을 먹으러 가야 한다는 점을 꼭 고려해줘"
-        f"이 상황에 가장 센스 있는 메뉴 1개를 추천해주고"
-        f"왜 그 메뉴가 {with_whom.value}와(과) 먹기에 좋은지 다정한 말투로 한 문장으로 말해줘."
+        f"너는 미식 전문가야. 현재 상황은 날씨 '{weather.value}', 기분 '{mood.value}', 동행자 '{with_whom.value}'이야. "
+        f"이 상황에 딱 맞는 점심 메뉴를 **{category_text}** 딱 1개만 추천해줘. "
+        f"메뉴 이름과 함께, 왜 이 메뉴가 현재 카테고리와 상황에 베스트인지 다정한 말투로 한 문장 설명해줘."
         )
 
     response = await model.generate_content_async(prompt)
     return {
-        "weather": weather.value,
-        "mood": mood.value,
-        "with_whom": with_whom.value,
-        "recommendation": response.text,
-        "type": "ai_context_recommend"
+        "category": category.value,
+        "recommendation": response.text
     }
 
 # 댓글 작성 API
@@ -100,6 +108,10 @@ def create_feedback(feedback: FeedbackCreate):
 @app.get("/feedbacks")
 def get_feedback():
     return get_all_feedbacks()
+
+@app.get("/")
+def read_root():
+    return FileResponse('static/index.html')
 
 # static 폴더를 "/" 경로로 연결 (index.html을 기본 화면으로 설정)
 app.mount("/static", StaticFiles(directory="static"), name="static")
