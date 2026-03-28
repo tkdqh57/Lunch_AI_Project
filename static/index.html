@@ -3,117 +3,197 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>오늘 뭐 먹지? AI 친구</title>
+    <title>오늘 뭐 먹지? - AI 점심 추천</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* 디자인 (CSS) */
-        body { font-family: 'Pretendard', sans-serif; background-color: #f8f9fa; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; }
-        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 450px; margin-bottom: 20px; box-sizing: border-box; }
-        h2, h3 { text-align: center; color: #333; margin-top: 0; }
-        label { display: block; margin-top: 15px; font-weight: bold; font-size: 14px; color: #555; }
-        select, input { width: 100%; padding: 12px; margin-top: 8px; border-radius: 12px; border: 1px solid #e0e0e0; box-sizing: border-box; font-size: 15px; }
-        button { width: 100%; padding: 15px; background: #ff6b6b; color: white; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: bold; margin-top: 20px; transition: 0.3s; }
-        button:hover { background: #ee5253; }
-        #result { margin-top: 20px; padding: 20px; border-radius: 15px; background: #fff5f5; border-left: 6px solid #ff6b6b; display: none; line-height: 1.6; color: #444; }
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #fff5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 { color: #ff6b6b; margin-bottom: 30px; }
+        .input-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ffe3e3;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        select:focus { border-color: #ff6b6b; }
+        button {
+            width: 100%;
+            padding: 15px;
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+        button:hover { background-color: #ee5253; }
 
-        /* 댓글창 전용 */
-        .feedback-item { border-bottom: 1px solid #f1f1f1; padding: 12px 0; }
-        .feedback-date { font-size: 11px; color: #bbb; margin-top: 4px; }
-        .feedback-list { margin-top: 15px; max-height: 250px; overflow-y: auto; }
-        .send-btn { background: #4a4e69; margin-top: 10px; }
+        /* 추천 결과창 스타일 */
+        #result-container {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 15px;
+            background-color: #fff9f9;
+            border-left: 5px solid #ff6b6b;
+            text-align: left;
+            display: none; /* 처음엔 숨김 */
+        }
+        .menu-title {
+            font-size: 1.4em;
+            font-weight: 800;
+            color: #d63031;
+            margin-bottom: 12px;
+            display: block;
+        }
+        .menu-desc {
+            font-size: 1.05em;
+            line-height: 1.7;
+            color: #2d3436;
+        }
+
+        /* 댓글 섹션 */
+        .feedback-section { margin-top: 40px; border-top: 2px dashed #ffe3e3; padding-top: 20px; }
+        #feedback-list { list-style: none; padding: 0; text-align: left; max-height: 200px; overflow-y: auto; }
+        .feedback-item { background: #f9f9f9; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 14px; border: 1px solid #eee; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h2>🍴 AI에게 점심 메뉴 추천받기</h2>
-        <label>☀️ 현재 날씨</label>
+<div class="container">
+    <h1>🍱 오늘 뭐 먹지?</h1>
+
+    <div class="input-group">
+        <label>☀️ 오늘의 날씨</label>
         <select id="weather">
-            <option value="맑음">맑음</option>
-            <option value="비">비가 옴</option>
-            <option value="눈">눈이 옴</option>
-            <option value="흐림">흐림</option>
+            <option value="맑음">☀️ 맑음</option>
+            <option value="비">☔ 비</option>
+            <option value="눈">❄️ 눈</option>
+            <option value="흐림">☁️ 흐림</option>
+            <option value="폭염">🔥 폭염</option>
+            <option value="한파">🥶 한파</option>
         </select>
+    </div>
 
-        <label>😊 내 기분은?</label>
+    <div class="input-group">
+        <label>🌈 현재 기분</label>
         <select id="mood">
-            <option value="행복함">행복함</option>
-            <option value="우울함">우울함</option>
-            <option value="피곤함">피곤함</option>
-            <option value="배고픔">배고픔</option>
-            <option value="다이어트 중">다이어트 중</option>
-            <option value="운동 완료! (단백질 필요)">운동 완료! 💪</option>
+            <option value="행복함">😊 행복함</option>
+            <option value="우울함">😢 우울함</option>
+            <option value="피곤함">😴 피곤함</option>
+            <option value="배고픔">😋 배고픔</option>
+            <option value="다이어트 중">🥗 다이어트 중</option>
+            <option value="운동 완료! (단백질필요)">💪 운동 완료!</option>
         </select>
+    </div>
 
-        <label>👫 누구랑 같이 먹어?</label>
+    <div class="input-group">
+        <label>👥 누구와 먹나요?</label>
         <select id="with_whom">
-            <option value="혼자">혼자</option>
-            <option value="연인">연인(데이트)</option>
-            <option value="친구">친한 친구</option>
-            <option value="직장동료">직장 동료</option>
+            <option value="혼자">🙋 혼자</option>
+            <option value="연인">👩‍❤️‍👨 연인</option>
+            <option value="친구">👬 친구</option>
+            <option value="직장동료">💼 직장동료</option>
+            <option value="가족">👨‍👩‍👧 가족</option>
         </select>
+    </div>
 
-        <button onclick="getRecommendation()">AI 친구에게 물어보기</button>
+    <button onclick="getRecommendation()">AI 메뉴 추천받기 ✨</button>
+
+    <div id="result-container">
         <div id="result"></div>
     </div>
 
-    <div class="card">
+    <div class="feedback-section">
         <h3>💬 한마디 남겨주세요</h3>
-        <input type="text" id="feedbackInput" placeholder="기능 추천이나 후기를 남겨주세요!">
-        <button class="send-btn" onclick="sendFeedback()">후기 등록</button>
-
-        <div class="feedback-list" id="feedbackList">
-            </div>
+        <input type="text" id="feedback-input" placeholder="후기를 남겨주세요!" style="width: 75%; padding: 10px; border-radius: 5px; border: 1px solid #ddd;">
+        <button onclick="sendFeedback()" style="width: 20%; padding: 10px; font-size: 14px; margin: 0;">등록</button>
+        <ul id="feedback-list"></ul>
     </div>
+</div>
 
-    <script>
-        // 페이지 로드 시 댓글 목록 불러오기
-        document.addEventListener('DOMContentLoaded', loadFeedbacks);
+<script>
+    async function getRecommendation() {
+        const weather = document.getElementById('weather').value;
+        const mood = document.getElementById('mood').value;
+        const withWhom = document.getElementById('with_whom').value;
+        const resultContainer = document.getElementById('result-container');
+        const resultDiv = document.getElementById('result');
 
-        // 1. 메뉴 추천 요청 함수
-        async function getRecommendation() {
-            const w = document.getElementById('weather').value;
-            const m = document.getElementById('mood').value;
-            const c = document.getElementById('with_whom').value;
-            const resDiv = document.getElementById('result');
+        resultDiv.innerHTML = "🤔 AI가 고민 중입니다...";
+        resultContainer.style.display = "block";
 
-            resDiv.style.display = 'block';
-            resDiv.innerHTML = "<strong>음... 맛있는 걸 생각 중이야... 💭</strong>";
-
-            const response = await fetch(`/ai-recommend?weather=${w}&mood=${m}&with_whom=${c}`);
+        try {
+            const response = await fetch(`/ai-recommend?weather=${weather}&mood=${mood}&with_whom=${withWhom}`);
             const data = await response.json();
 
-            resDiv.innerHTML = `<strong>✨ AI 친구의 제안:</strong><br>${data.recommendation}`;
+            let rawText = data.recommendation;
+
+            // 1. 불필요한 마크다운 기호 제거 (##, **)
+            let cleanText = rawText.replace(/## /g, '').replace(/\*\*/g, '').trim();
+
+            // 2. 메뉴 이름과 설명 분리 (첫 줄은 제목, 나머지는 설명)
+            const lines = cleanText.split('\n');
+            const menuName = lines[0];
+            const description = lines.slice(1).join('<br>').trim();
+
+            // 3. HTML로 예쁘게 그리기
+            resultDiv.innerHTML = `
+                <span class="menu-title">✨ AI 친구의 제안: ${menuName}</span>
+                <div class="menu-desc">${description}</div>
+            `;
+        } catch (error) {
+            resultDiv.innerHTML = "❌ 추천을 가져오지 못했습니다. 다시 시도해 주세요.";
         }
+    }
 
-        // 2. 댓글 전송 함수
-        async function sendFeedback() {
-            const input = document.getElementById('feedbackInput');
-            const content = input.value;
-            if (!content) return alert("내용을 입력해주세요!");
+    async function sendFeedback() {
+        const input = document.getElementById('feedback-input');
+        if (!input.value) return;
 
-            await fetch('/feedback', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: content })
-            });
+        await fetch('/feedback', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({content: input.value})
+        });
+        input.value = '';
+        loadFeedbacks();
+    }
 
-            input.value = '';
-            loadFeedbacks(); // 새로고침
-        }
+    async function loadFeedbacks() {
+        const response = await fetch('/feedbacks');
+        const feedbacks = await response.json();
+        const list = document.getElementById('feedback-list');
+        list.innerHTML = feedbacks.map(f => `<li class="feedback-item">${f.content}</li>`).join('');
+    }
 
-        // 3. 댓글 목록 로드 함수
-        async function loadFeedbacks() {
-            const response = await fetch('/feedbacks');
-            const data = await response.json();
-            const listDiv = document.getElementById('feedbackList');
+    // 페이지 로드 시 댓글 불러오기
+    loadFeedbacks();
+</script>
 
-            listDiv.innerHTML = data.map(f => `
-                <div class="feedback-item">
-                    <div>${f.content}</div>
-                    <div class="feedback-date">${f.date}</div>
-                </div>
-            `).join('');
-        }
-    </script>
 </body>
 </html>
