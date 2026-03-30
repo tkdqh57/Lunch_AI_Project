@@ -3,12 +3,10 @@ from enum import Enum
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
-import random
 import google.generativeai as genai
 from fastapi.responses import FileResponse
 from starlette.staticfiles import StaticFiles
 
-from data import menu_db
 from models import init_db, FeedbackCreate, save_feedback, get_all_feedbacks
 
 # 1. API 키 불러오기
@@ -25,6 +23,11 @@ model = genai.GenerativeModel('gemini-2.5-flash-lite')
 app = FastAPI()
 
 init_db()
+
+class GenderType(str, Enum):
+    male = "남성"
+    female = "여성"
+    none = "선택안함"
 
 class CompanionType(str, Enum):
     alone = "혼자"
@@ -56,23 +59,27 @@ def read_root():
 # Gemini AI 추천 API(Pro버전 활용)
 @app.get("/ai-recommend")
 async def get_ai_recommend(
+        gender: GenderType = GenderType.none,
         weather: WeatherType = WeatherType.sunny,
         mood: MoodType = MoodType.happy,
-        with_whom: CompanionType = CompanionType.alone
+        with_whom: CompanionType = CompanionType.alone,
+        additional_request: str = ""
 ):
+    gender_text = f"성별은 '{gender.value}'이고 " if gender != GenderType.none else ""
+
+    request_text = f"\n [사용자의 특별 요청]\n - \"{additional_request}\"" if additional_request else ""
 
     prompt = (
-        f"너는 전 세계 모든 요리를 섭렵한 최고의 푸드 큐레이터야.\n\n"
-        f" [분석 데이터]\n"
-        f" - 날씨: {weather.value}\n"
-        f" - 사용자의 기분: {mood.value}\n"
-        f" - 함께 먹는 사람: {with_whom.value}\n\n"
+        f"너는 사용자의 취향과 상황을 완벽하게 파악하는 미식 큐레이터야.\n\n"
+        f" [기본 데이터]\n"
+        f" - 사용자 정보: {gender_text}'{with_whom.value}'와(과) 함께 식사 예정\n"
+        f" - 환경 데이터: 날씨 '{weather.value}', 기분 '{mood.value}'{request_text}\n\n"
         f" [미션]\n"
-        f" 위 3가지 요소를 심도 있게 분석해서, 지금 이 순간 사용자가 가장 행복하게 먹을 수 있는 점심 메뉴 딱 1가지만 추천해줘.\n"
-        f" 한식, 중식, 일식, 양식, 에스닉 푸드 등 어떤 장르든 상관없어. 오직 '최고의 조합'에만 집중해.\n\n"
+        f" 위 데이터를 종합 분석해서 지금 이 순간 사용자에게 가장 감동을 줄 수 있는 점심 메뉴 1가지만 추천해줘. "
+        f"특히 사용자의 특별 요청 사항이 있다면 이를 최우선으로 반영해줘.\n\n"
         f" [출력 형식]\n"
-        f" 1. 첫 줄: 메뉴 이름 (예: 매콤한 해물 짬뽕)\n"
-        f" 2. 두 번째 줄: 왜 이 메뉴가 현재 날씨와 기분, 그리고 동행자와의 상황에 완벽한 '인생 메뉴'인지 다정하고 설득력 있게 한 문장 설명해줘."
+        f" 1. 첫 줄: 메뉴 이름\n"
+        f" 2. 두 번째 줄: 추천 이유 설명"
         )
 
     response = await model.generate_content_async(prompt)
@@ -80,7 +87,7 @@ async def get_ai_recommend(
         "weather": weather.value,
         "mood": mood.value,
         "with_whom": with_whom.value,
-        "recommendation": response.text
+        "recommendation": response.text,
     }
 
 # 댓글 작성 API
